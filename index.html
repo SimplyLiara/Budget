@@ -54,7 +54,10 @@ main{min-width:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-ri
   .side{display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;padding:28px 12px 20px max(12px,env(safe-area-inset-left,0px));background:var(--bar);border-right:.5px solid var(--sep);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px)}
   .side h2{font-size:13px;font-weight:600;color:var(--fg2);margin:0 10px 10px;text-transform:uppercase;letter-spacing:.06em}
   .side .brand{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0 10px 22px;display:flex;align-items:center;gap:10px}
-  .side .brand i{width:30px;height:30px;border-radius:8px;background:linear-gradient(160deg,var(--green),var(--teal));display:grid;place-items:center;color:var(--onaccent);font-style:normal;font-size:16px}
+  .side .brand .grow{flex:1}
+.side .brand .theme{width:32px;height:32px}
+.side .brand .theme svg{width:18px;height:18px;color:var(--blue)}
+.side .brand i{width:30px;height:30px;border-radius:8px;background:linear-gradient(160deg,var(--green),var(--teal));display:grid;place-items:center;color:var(--onaccent);font-style:normal;font-size:16px}
   .side button{display:flex;align-items:center;gap:12px;padding:8px 10px;border:0;background:none;border-radius:9px;font-size:15px;text-align:left;color:var(--fg)}
   .side button svg{width:22px;height:22px;color:var(--blue);flex:none}
   .side button:hover{background:var(--fill)}
@@ -262,6 +265,8 @@ const ICONS={
   pie:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 2.5A8 8 0 0 1 21.5 9H15z"/></svg>',
   scale:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 21h10M4 7h16"/><path d="M6.5 7 3.5 14a3 3 0 0 0 6 0zM17.5 7l-3 7a3 3 0 0 0 6 0z"/></svg>',
   gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>',
   right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>',
@@ -304,6 +309,19 @@ function parseNum(s){
   return parseFloat(s);
 }
 const numIn=v=>(v===undefined||v===null||v==='')?'':String(Math.round(v*100)/100).replace('.',',');
+
+/* ===================== Hell / Dunkel ===================== */
+const THEME_KEY='finanzen-theme';
+const mqDark=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+function storedTheme(){try{return localStorage.getItem(THEME_KEY)}catch(e){return null}}
+function isDark(){const t=document.documentElement.getAttribute('data-theme');return t?t==='dark':!!(mqDark&&mqDark.matches)}
+function applyTheme(t){
+  if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);else document.documentElement.removeAttribute('data-theme');
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute('content',isDark()?'#000000':'#f2f2f7'));
+}
+function themeBtn(cls){const d=isDark();return `<button class="${cls}" data-act="theme" aria-label="${d?'Hellen Modus einschalten':'Dunklen Modus einschalten'}" title="${d?'Hell':'Dunkel'}">${d?ICONS.sun:ICONS.moon}</button>`}
+applyTheme(storedTheme());
+if(mqDark&&mqDark.addEventListener)mqDark.addEventListener('change',()=>{if(!storedTheme()){applyTheme(null);render()}});
 
 /* ===================== Beispieldaten ===================== */
 function makeDemo(){
@@ -556,11 +574,11 @@ function totals(){
 /* ===================== Rendering ===================== */
 function nav(){
   const side=document.getElementById('side'),tabs=document.getElementById('tabs');
-  side.innerHTML=`<div class="brand"><i>€</i>Finanzen</div>`+VIEWS.map(v=>`<button data-go="${v.id}" ${ui.view===v.id?'aria-current="page"':''}>${ICONS[v.icon]}${v.name}</button>`).join('')+`<div class="grow"></div><div class="sync" id="syncline">${syncText()}</div>`;
+  side.innerHTML=`<div class="brand"><i>€</i>Finanzen<span class="grow"></span>${themeBtn('iconbtn theme')}</div>`+VIEWS.map(v=>`<button data-go="${v.id}" ${ui.view===v.id?'aria-current="page"':''}>${ICONS[v.icon]}${v.name}</button>`).join('')+`<div class="grow"></div><div class="sync" id="syncline">${syncText()}</div>`;
   tabs.innerHTML=VIEWS.filter(v=>v.id!=='einstellungen').map(v=>`<button data-go="${v.id}" ${ui.view===v.id?'aria-current="page"':''}>${ICONS[v.icon]}<span>${v.short||v.name}</span></button>`).join('');
 }
 function header(title,sub,actions=''){
-  return `<header class="head"><div><h1>${title}</h1>${sub?`<div class="sub">${sub}</div>`:''}</div><div class="actions">${actions}<button class="iconbtn mobile-only" data-go="einstellungen" aria-label="Einstellungen">${ICONS.gear}</button></div></header>`;
+  return `<header class="head"><div><h1>${title}</h1>${sub?`<div class="sub">${sub}</div>`:''}</div><div class="actions">${actions}${themeBtn('iconbtn mobile-only')}<button class="iconbtn mobile-only" data-go="einstellungen" aria-label="Einstellungen">${ICONS.gear}</button></div></header>`;
 }
 const monthSwitch=()=>`<div class="month"><button data-act="mprev" aria-label="Vorheriger Monat">${ICONS.left}</button><span>${MONTHS[ui.m]} ${ui.y}</span><button data-act="mnext" aria-label="Nächster Monat">${ICONS.right}</button></div>`;
 const demoBanner=()=>state.demo?`<div class="banner"><span><b>Beispieldaten.</b> So sieht der Planer mit Inhalt aus. Lösche die Beispiele, um mit deinen eigenen Konten zu starten.</span><button class="pill solid" data-act="cleardemo">Leer starten</button></div>`:'';
@@ -745,6 +763,8 @@ const checkBtn=(d,x)=>`<button type="button" class="check" data-act="ratepaid" d
 
 function vSettings(){
   return `${header('Einstellungen','')}
+  <section class="section"><div class="caps">Erscheinungsbild</div><div class="group"><div class="row"><div class="main"><span class="t">Design</span></div><div class="seg" role="group" aria-label="Design">${[['auto','Automatisch'],['light','Hell'],['dark','Dunkel']].map(([v,l])=>`<button data-act="themeset" data-v="${v}" aria-pressed="${(storedTheme()||'auto')===v}">${l}</button>`).join('')}</div></div></div>
+    <p class="foot">„Automatisch“ folgt der Einstellung deines iPhones oder Computers. Mit Sonne und Mond oben schaltest du schnell um.</p></section>
   <section class="section"><div class="caps">GitHub-Synchronisation</div>
     <div class="group"><div class="row"><div class="main"><span class="t" id="syncline2" style="white-space:normal">${syncText()}</span></div>${gh?`<button class="pill" data-act="ghsync">Jetzt abgleichen</button>`:''}</div></div>
     <form class="form" id="ghform" autocomplete="off" style="margin-top:8px">
@@ -935,8 +955,8 @@ function debtDetail(d,keep){
   if(!d)return closeSheet();
   const r=rest(d),pct=d.total?Math.min(1,paidSum(d)/d.total):0,gap=planGap(d),e=planEnd(d),a=acc(d.accountId);
   let cum=0;
-  const rows=sortedRates(d).map(x=>{cum=r2(cum+x.amount);const after=Math.max(0,r2(d.total-cum));const late=!x.paid&&x.date<today();
-    return `<tr class="${x.paid?'done':''}"><td><button type="button" class="datebtn ${late?'neg':''}" data-act="editrate" data-id="${d.id}" data-r="${x.id}">${fmtDate(x.date)}${x.label?`<span class="muted" style="display:block;font-size:12px">${esc(x.label)}</span>`:''}</button></td><td class="r">${money(x.amount)}</td><td class="r muted">${money(after)}</td><td class="c">${checkBtn(d,x)}</td><td class="c"><button type="button" class="more" data-act="editrate" data-id="${d.id}" data-r="${x.id}" aria-label="Rate bearbeiten">•••</button></td></tr>`}).join('');
+  const rows=sortedRates(d).map(x=>{if(x.paid)cum=r2(cum+x.amount);const after=Math.max(0,r2(d.total-cum));const late=!x.paid&&x.date<today();
+    return `<tr class="${x.paid?'done':''}"><td><button type="button" class="datebtn ${late?'neg':''}" data-act="editrate" data-id="${d.id}" data-r="${x.id}">${fmtDate(x.date)}${x.label?`<span class="muted" style="display:block;font-size:12px">${esc(x.label)}</span>`:''}</button></td><td class="r">${money(x.amount)}</td><td class="r muted">${x.paid?money(after):'–'}</td><td class="c">${checkBtn(d,x)}</td><td class="c"><button type="button" class="more" data-act="editrate" data-id="${d.id}" data-r="${x.id}" aria-label="Rate bearbeiten">•••</button></td></tr>`}).join('');
   openSheet({title:debtTitle(d),keep,body:`
     <div class="form debthead">
       <div class="row"><div class="main"><span class="s">Inkasso</span><span class="t">${esc(d.inkasso||'keins')}</span></div></div>
@@ -1031,6 +1051,8 @@ document.addEventListener('click',e=>{
   if(a==='scrim'){if(e.target===el){const b=sheet&&sheet.back;closeSheet();b&&b()}return}
   e.preventDefault&&el.tagName==='BUTTON'&&e.preventDefault();
   switch(a){
+    case 'themeset':{const v=el.dataset.v;try{v==='auto'?localStorage.removeItem(THEME_KEY):localStorage.setItem(THEME_KEY,v)}catch(_){}applyTheme(v==='auto'?null:v);render();break}
+    case 'theme':{const t=isDark()?'light':'dark';try{localStorage.setItem(THEME_KEY,t)}catch(_){}applyTheme(t);render();toast(t==='dark'?'Dunkler Modus':'Heller Modus');break}
     case 'close':{const b=sheet&&sheet.back;closeSheet();b&&b();break}
     case 'save':doSave();break;
     case 'del':
