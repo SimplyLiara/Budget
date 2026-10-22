@@ -91,7 +91,7 @@ main{min-width:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-ri
 
 /* Sections & grouped lists */
 .section{display:flex;flex-direction:column;gap:8px;min-width:0}
-.section>.label{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:0 16px}
+.section>.label{flex-wrap:wrap;row-gap:8px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:0 16px}
 .section>.label h3{margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em}
 .section>.label .link{border:0;background:none;color:var(--blue);font-size:15px;padding:0}
 .section>.caps{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--fg2);padding:0 16px}
@@ -156,6 +156,33 @@ button.brow:hover{background:var(--fill)}
 .chip.orange{background:color-mix(in srgb,var(--orange) 16%,transparent);color:var(--orange)}
 .chip.green{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
 .chip.gray{background:var(--fill);color:var(--fg2)}
+.chip.purple{background:color-mix(in srgb,var(--purple) 15%,transparent);color:var(--purple)}
+.tablewrap{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow-x:auto;min-width:0}
+.tablewrap.tall{max-height:440px;overflow-y:auto}
+table.dt{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+.dt th{position:sticky;top:0;background:var(--card);z-index:1;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--fg2);font-weight:600;text-align:left;padding:10px 14px;border-bottom:.5px solid var(--sep);white-space:nowrap}
+.dt td{padding:10px 14px;border-bottom:.5px solid var(--sep);white-space:nowrap;vertical-align:middle}
+.dt td.wrap{white-space:normal;min-width:110px}
+.dt td b{font-weight:600}
+.dt tbody tr:last-child td{border-bottom:0}
+.dt tbody tr[data-act]{cursor:pointer}
+.dt tbody tr[data-act]:hover,.dt tbody tr[data-act]:focus-visible{background:var(--fill);outline:none}
+.dt .r{text-align:right} .dt .c{text-align:center}
+.dt tr.cur td{background:color-mix(in srgb,var(--blue) 9%,var(--card))}
+.dt tr.done td:not(.c){color:var(--fg2)}
+.rp td,.rp th{padding-left:10px;padding-right:10px}
+.check{width:26px;height:26px;border-radius:50%;border:1.6px solid var(--fg3);background:none;display:inline-grid;place-items:center;color:transparent;padding:0;flex:none;transition:background .15s}
+.check svg{width:15px;height:15px}
+.check[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--onaccent)}
+.more{border:0;background:none;color:var(--blue);font-size:13px;letter-spacing:1px;padding:4px 6px;border-radius:6px}
+.more:hover{background:var(--fill)}
+.debthead .row{min-height:48px}
+.datebtn{border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit}
+.datebtn.neg{color:var(--red)}
+.debthead .s{font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.scrim.noanim,.scrim.noanim .sheet{animation:none}
+.only-narrow{display:none}
+@media (max-width:699px){.only-wide{display:none}.only-narrow{display:block}.dt{font-size:14px}.dt th,.dt td{padding-left:8px;padding-right:8px}.rp th:last-child,.rp td:last-child{display:none}}
 .chip.blue{background:color-mix(in srgb,var(--blue) 14%,transparent);color:var(--blue)}
 
 /* Debt cards */
@@ -248,7 +275,9 @@ const VIEWS=[
 ];
 const COLORS=['blue','green','orange','red','purple','teal','indigo','pink','yellow','gray'];
 const ACC_TYPES={giro:'Girokonto',spar:'Sparkonto',tagesgeld:'Tagesgeld',kreditkarte:'Kreditkarte',depot:'Depot',bar:'Bargeld',online:'PayPal / Online',sonst:'Sonstiges'};
-const DEBT_KINDS={kredit:'Kredit',ratenkauf:'Ratenkauf',dispo:'Dispo / Kreditkarte',privat:'Privat',sonst:'Sonstiges'};
+const DEBT_KINDS={inkasso:'Inkasso-Forderung',rechnung:'Offene Rechnung',kredit:'Kredit',ratenkauf:'Ratenkauf',dispo:'Dispo / Kreditkarte',privat:'Privat',sonst:'Sonstiges'};
+const DEBT_STATUS={auto:'Automatisch',klaerung:'In Klärung',gestundet:'Gestundet / pausiert',widerspruch:'Widerspruch eingelegt'};
+const STEPS=[[1,'Monatlich'],[2,'Alle 2 Monate'],[3,'Vierteljährlich'],[0,'Einmalig']];
 const INTERVALS={monthly:'Monatlich',quarterly:'Vierteljährlich',yearly:'Jährlich'};
 const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const MONTHS_S=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
@@ -327,20 +356,26 @@ function makeDemo(){
       {id:'f8',name:'Kfz-Versicherung',kind:'out',amount:96,interval:'quarterly',accountId:'a1',category:'versicherung',month:1,booked:[]}
     ],
     debts:[
-      {id:'d1',dir:'owe',kind:'kredit',name:'Autokredit',person:'Santander Bank',original:12000,opening:8400,rate:4.9,monthly:250,due:'',note:'Laufzeit ursprünglich 48 Monate',payments:[]},
-      {id:'d2',dir:'owe',kind:'ratenkauf',name:'Laptop (0 %-Finanzierung)',person:'MediaMarkt / Bank',original:1200,opening:600,rate:0,monthly:100,due:'',note:'',payments:[]},
-      {id:'d3',dir:'owe',kind:'privat',name:'Umzugshilfe',person:'Mama',original:500,opening:300,rate:0,monthly:50,due:'',note:'Kein Druck, monatlich 50 €',payments:[]},
-      {id:'d4',dir:'owed',kind:'privat',name:'Konzertkarten',person:'Sarah',original:120,opening:120,rate:0,monthly:0,due:addDays(10),note:'',payments:[{id:'p1',date:cur(5),amount:40,interest:0,note:'Bar zurück'}]},
-      {id:'d5',dir:'owed',kind:'privat',name:'Ausgelegt beim Einkauf',person:'Jonas',original:150,opening:150,rate:0,monthly:0,due:addDays(-6),note:'',payments:[]}
+      demoDebt('d1','owe','inkasso','Muster Inkasso GmbH','Mobilfunk Beispiel AG','MI-2025-04711',480,40,-6,6,'a1'),
+      demoDebt('d2','owe','ratenkauf','','Versandhaus Beispiel','RK-883120',600,100,-2,1,'',{day:5}),
+      demoDebt('d3','owe','inkasso','Forderungsmanagement Nord','Fitnessstudio Beispiel','FN 22/1093',249.90,0,0,0,'',{status:'klaerung',note:'Kündigung liegt vor, Unterlagen angefordert'}),
+      demoDebt('d4','owe','kredit','','Beispielbank','KR 5501922',3000,250,-3,3,'a1'),
+      demoDebt('d5','owe','rechnung','','Stadtwerke Beispiel','KD 7781-22',110.16,55.08,-4,2,''),
+      demoDebt('d6','owed','privat','','Sarah','',120,40,-1,1,'',{note:'Konzertkarten'}),
+      demoDebt('d7','owed','privat','','Jonas','',150,150,0,0,'',{note:'Beim Einkauf ausgelegt',first:addDays(-6)})
     ]
   };
+}
+function demoDebt(id,dir,kind,inkasso,firma,az,total,rate,offset,paidCount,accountId,extra={}){
+  const rates=rate>0?planRates(total,rate,extra.first||monthDate(offset,extra.day||28),1).map((x,i)=>({id:id+'r'+i,...x,paid:i<paidCount})):[];
+  return {id,dir,kind,inkasso,firma,az,total,accountId,status:extra.status||'auto',note:extra.note||'',rates};
 }
 function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
 function emptyState(){const s=makeDemo();return {demo:false,updated:Date.now(),accounts:[],categories:s.categories.map(c=>({...c,budget:0})),tx:[],fixed:[],debts:[]}}
 
 /* ===================== Zustand & Speicher ===================== */
 const LS='finanzen-im-blick-v1';
-let state, ui={view:'uebersicht', y:new Date().getFullYear(), m:new Date().getMonth(), txFilter:'all', txAcc:'', txQuery:'', debtDir:'owe'};
+let state, ui={view:'uebersicht', y:new Date().getFullYear(), m:new Date().getMonth(), txFilter:'all', txAcc:'', txQuery:'', debtDir:'owe', debtFilter:'all'};
 const GH_KEY='finanzen-github-v1';
 let gh=(()=>{try{return JSON.parse(localStorage.getItem(GH_KEY))||null}catch(e){return null}})();
 function saveGh(c){try{c?localStorage.setItem(GH_KEY,JSON.stringify(c)):localStorage.removeItem(GH_KEY)}catch(e){}}
@@ -349,7 +384,7 @@ function loadLocal(){try{const s=localStorage.getItem(LS);return s?JSON.parse(s)
 function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}}
 function normalize(s){
   s.accounts||=[];s.tx||=[];s.categories||=[];s.fixed||=[];s.debts||=[];
-  s.debts.forEach(d=>d.payments||=[]);s.fixed.forEach(f=>f.booked||=[]);return s;
+  s.debts=s.debts.map(d=>migrateDebt(d,s.tx));s.fixed.forEach(f=>f.booked||=[]);return s;
 }
 function adopt(d){state=normalize(JSON.parse(JSON.stringify(d)));saveLocal();render()}
 function commit(msg){state.updated=Date.now();saveLocal();queueRemote();render();if(msg)toast(msg)}
@@ -435,16 +470,77 @@ const curKey=()=>mkey(ui.y,ui.m);
 const monthTx=k=>state.tx.filter(t=>t.date.startsWith(k));
 function monthSums(k){let i=0,o=0;for(const t of monthTx(k)){if(t.type==='in')i+=t.amount;else if(t.type==='out')o+=t.amount}return {i,o}}
 function spentBy(k){const r={};for(const t of monthTx(k))if(t.type==='out')r[t.category||'sonst']=(r[t.category||'sonst']||0)+t.amount;return r}
-const paidPrincipal=d=>d.payments.reduce((s,p)=>s+(p.amount-(p.interest||0)),0);
-const rest=d=>Math.max(0,Math.round((d.opening-paidPrincipal(d))*100)/100);
-const paidTotal=d=>d.payments.reduce((s,p)=>s+p.amount,0);
-function projection(d){
-  const B=rest(d),P=+d.monthly||0,r=(+d.rate||0)/1200;
-  if(B<=0)return {done:true};
-  if(!P)return null;
-  if(r>0&&P<=B*r)return {never:true};
-  const n=r===0?Math.ceil(B/P):Math.ceil(-Math.log(1-r*B/P)/Math.log(1+r));
-  return {n,interest:r===0?0:Math.max(0,n*P-B),end:addMonths(n)};
+const r2=v=>Math.round((+v||0)*100)/100;
+const daysIn=(y,m)=>new Date(y,m,0).getDate();
+function monthDate(offset,day){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+offset);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(Math.min(day||1,daysIn(d.getFullYear(),d.getMonth()+1)))}
+function planRates(amount,rate,first,step){
+  const out=[];amount=r2(amount);if(!(amount>0)||!first)return out;
+  if(!(rate>0)||!step){out.push({date:first,amount});return out}
+  let [y,m,d]=first.split('-').map(Number),left=amount,i=0;
+  while(left>0.004&&i<600){out.push({date:`${y}-${pad(m)}-${pad(Math.min(d,daysIn(y,m)))}`,amount:r2(Math.min(rate,left))});left=r2(left-rate);m+=step;while(m>12){m-=12;y++}i++}
+  return out;
+}
+const sortedRates=d=>[...d.rates].sort((a,b)=>a.date.localeCompare(b.date));
+const paidSum=d=>r2(d.rates.reduce((s,x)=>s+(x.paid?x.amount:0),0));
+const plannedSum=d=>r2(d.rates.reduce((s,x)=>s+x.amount,0));
+const rest=d=>Math.max(0,r2((+d.total||0)-paidSum(d)));
+const paidTotal=paidSum;
+const nextRate=d=>sortedRates(d).find(x=>!x.paid);
+const overdueRates=d=>d.rates.filter(x=>!x.paid&&x.date<today());
+const planGap=d=>Math.max(0,r2((+d.total||0)-plannedSum(d)));
+function planEnd(d){let c=0;for(const x of sortedRates(d)){c=r2(c+x.amount);if(c>=(+d.total||0)-0.004)return x.date}return null}
+const debtTitle=d=>d.firma||d.inkasso||'Ohne Namen';
+function migrateDebt(d,tx){
+  if(Array.isArray(d.rates)){d.status||='auto';return d}
+  const pays=d.payments||[];
+  const n={id:d.id||newId(),dir:d.dir||'owe',kind:d.kind||'sonst',inkasso:'',firma:d.person||d.name||'',az:'',total:r2(+d.opening||+d.original||0),accountId:'',status:'auto',
+    note:[d.person&&d.name?d.name:'',d.note||''].filter(Boolean).join(' · '),
+    rates:pays.map(p=>({id:p.id||newId(),date:p.date,amount:r2(p.amount-(p.interest||0)),paid:true,txId:p.txId}))};
+  n.rates.forEach(x=>{const t=x.txId&&tx.find(t=>t.id===x.txId);if(t)t.rateId=x.id});
+  const left=rest(n);
+  if(left>0){if(+d.monthly>0)n.rates.push(...planRates(left,+d.monthly,monthDate(1,1),1).map(x=>({id:newId(),...x,paid:false})));else if(d.due)n.rates.push({id:newId(),date:d.due,amount:left,paid:false})}
+  return n;
+}
+function setPaid(d,x,paid){
+  x.paid=paid;
+  if(paid&&d.accountId&&acc(d.accountId)&&!x.txId){
+    const owe=d.dir==='owe';
+    const t={id:newId(),date:x.date>today()?today():x.date,type:owe?'out':'in',amount:x.amount,accountId:d.accountId,
+      category:owe?(cat('schulden')?'schulden':''):(cat('einnahme')?'einnahme':''),note:(owe?'Rate ':'Rückzahlung ')+debtTitle(d),debtId:d.id,rateId:x.id};
+    state.tx.push(t);x.txId=t.id;
+  }
+  if(!paid&&x.txId){state.tx=state.tx.filter(t=>t.id!==x.txId);delete x.txId}
+}
+function debtStatus(d){
+  if(rest(d)<=0)return '<span class="chip green">Erledigt</span>';
+  if(d.status&&d.status!=='auto')return `<span class="chip purple">${esc(DEBT_STATUS[d.status]||d.status)}</span>`;
+  const od=overdueRates(d);
+  if(od.length)return `<span class="chip red">${od.length===1?'Rate':od.length+' Raten'} überfällig</span>`;
+  const n=nextRate(d);
+  if(!n)return '<span class="chip gray">Kein Ratenplan</span>';
+  const days=daysUntil(n.date);
+  if(days<=7)return `<span class="chip orange">${days===0?'Heute fällig':'Fällig in '+days+(days===1?' Tag':' Tagen')}</span>`;
+  return '<span class="chip blue">Zahlungen offen</span>';
+}
+function payTimeline(debts){
+  const rows=[],ds=debts.filter(d=>d.rates.length);if(!ds.length)return rows;
+  const dates=ds.flatMap(d=>d.rates.map(x=>x.date)).sort();
+  let [y,m]=dates[0].split('-').map(Number);const [ey,em]=dates[dates.length-1].split('-').map(Number);
+  const nowK=today().slice(0,7),starts=new Map(ds.map(d=>[d.id,sortedRates(d)[0].date.slice(0,7)]));
+  let guard=0;
+  while((y<ey||(y===ey&&m<=em))&&guard++<600){
+    const k=y+'-'+pad(m);let planned=0,paid=0,rem=0;
+    for(const d of ds){
+      for(const x of d.rates)if(x.date.slice(0,7)===k){planned+=x.amount;if(x.paid)paid+=x.amount}
+      if(starts.get(d.id)>k)continue;
+      const v=k<=nowK?(+d.total||0)-d.rates.filter(x=>x.paid&&x.date.slice(0,7)<=k).reduce((s,x)=>s+x.amount,0)
+        :rest(d)-d.rates.filter(x=>!x.paid&&x.date.slice(0,7)<=k).reduce((s,x)=>s+x.amount,0);
+      rem+=Math.max(0,v);
+    }
+    rows.push({k,y,m,planned:r2(planned),paid:r2(paid),rem:r2(rem),cur:k===nowK,past:k<nowK});
+    m++;if(m>12){m=1;y++}
+  }
+  return rows;
 }
 const monthlyOf=f=>f.interval==='monthly'?f.amount:f.interval==='quarterly'?f.amount/3:f.amount/12;
 function fixedDue(f,m){ if(f.interval==='monthly')return true; const s=(+f.month||1)-1; if(f.interval==='yearly')return m===s; return ((m-s)%3+3)%3===0 }
@@ -454,19 +550,6 @@ function totals(){
   const owed=state.debts.filter(d=>d.dir==='owed').reduce((s,d)=>s+rest(d),0);
   return {assets,owe,owed,net:assets-owe+owed};
 }
-function debtStatus(d){
-  if(rest(d)<=0)return '<span class="chip green">Beglichen</span>';
-  if(d.dir==='owed'||d.kind==='privat'){
-    if(!d.due)return d.dir==='owed'?'<span class="chip gray">Offen</span>':'';
-    const n=daysUntil(d.due);
-    if(n<0)return `<span class="chip red">${-n===1?'1 Tag':-n+' Tage'} überfällig</span>`;
-    if(n===0)return '<span class="chip orange">Heute fällig</span>';
-    if(n<=14)return `<span class="chip orange">Fällig in ${n===1?'1 Tag':n+' Tagen'}</span>`;
-    return `<span class="chip gray">Fällig ${fmtDate(d.due)}</span>`;
-  }
-  return `<span class="chip blue">${esc(DEBT_KINDS[d.kind]||'Kredit')}</span>`;
-}
-
 /* ===================== Rendering ===================== */
 function nav(){
   const side=document.getElementById('side'),tabs=document.getElementById('tabs');
@@ -483,7 +566,9 @@ const icon=(color,text)=>`<span class="ic" style="background:var(--${color||'blu
 function render(){
   nav();
   const v=document.getElementById('view');
+  const tlw=document.getElementById('tlwrap'),tlTop=tlw?tlw.scrollTop:null;
   v.innerHTML=({uebersicht:vOverview,konten:vAccounts,buchungen:vTx,budget:vBudget,schulden:vDebts,einstellungen:vSettings}[ui.view]||vOverview)();
+  const tw=document.getElementById('tlwrap');if(tw){if(tlTop!==null)tw.scrollTop=tlTop;else{const c=tw.querySelector('tr.cur');if(c)tw.scrollTop=Math.max(0,c.offsetTop-tw.clientHeight/2)}}
 }
 
 function txRow(t){
@@ -500,8 +585,8 @@ function vOverview(){
   const sum=parts.reduce((s,p)=>s+p[1],0)||1;
   const budgets=state.categories.filter(c=>c.kind==='out'&&c.budget>0).map(c=>({c,spent:sp[c.id]||0,pct:(sp[c.id]||0)/c.budget})).sort((a,b)=>b.pct-a.pct).slice(0,4);
   const owes=state.debts.filter(d=>d.dir==='owe'&&rest(d)>0),owed=state.debts.filter(d=>d.dir==='owed'&&rest(d)>0);
-  const rates=owes.reduce((s,d)=>s+(+d.monthly||0),0);
-  const alerts=state.debts.filter(d=>rest(d)>0&&d.due&&daysUntil(d.due)<=14);
+  const mk=today().slice(0,7),dueM=owes.reduce((s,d)=>s+d.rates.filter(x=>!x.paid&&x.date.slice(0,7)<=mk).reduce((a,x)=>a+x.amount,0),0);
+  const alerts=state.debts.filter(d=>rest(d)>0&&(!d.status||d.status==='auto')).map(d=>({d,n:nextRate(d)})).filter(o=>o.n&&daysUntil(o.n.date)<=7).sort((a,b)=>a.n.date.localeCompare(b.n.date));
   const recent=[...state.tx].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
   return `${header('Übersicht',fmtDay(today()),`<button class="iconbtn primary" data-act="newtx" aria-label="Buchung hinzufügen">${ICONS.plus}</button>`)}
   ${demoBanner()}
@@ -519,7 +604,7 @@ function vOverview(){
       <div class="card"><span class="k">Bilanz</span><span class="big ${ms.i-ms.o<0?'neg':''}">${signed(ms.i-ms.o)}</span></div>
     </div>
   </section>
-  ${alerts.length?`<section class="section"><div class="label"><h3>Bald fällig</h3></div><div class="group">${alerts.map(d=>`<button class="row" data-act="debt" data-id="${d.id}"><div class="main"><span class="t">${esc(d.person||d.name)} · ${esc(d.name)}</span><span class="s">${d.dir==='owed'?'Schuldet dir':'Du schuldest'} ${money(rest(d))}</span></div>${debtStatus(d)}${ICONS.chev}</button>`).join('')}</div></section>`:''}
+  ${alerts.length?`<section class="section"><div class="label"><h3>Bald fällig</h3></div><div class="group">${alerts.map(({d,n})=>`<div class="row">${checkBtn(d,n)}<button class="main" style="border:0;background:none;text-align:left;padding:0" data-act="debt" data-id="${d.id}"><span class="t">${esc(debtTitle(d))}</span><span class="s">${d.dir==='owed'?'Rückzahlung':'Rate'} ${money(n.amount)} · ${fmtDate(n.date)}</span></button>${debtStatus(d)}</div>`).join('')}</div></section>`:''}
   <div class="two">
     <section class="section"><div class="label"><h3>Konten</h3><button class="link" data-go="konten">Alle</button></div>
       <div class="group">${state.accounts.length?state.accounts.map(a=>`<button class="row has-ic" data-act="editacc" data-id="${a.id}">${icon(a.color,a.name[0]||'?')}<div class="main"><span class="t">${esc(a.name)}</span><span class="s">${esc(a.bank||ACC_TYPES[a.type]||'')}</span></div><span class="v ${balance(a)<0?'neg':''}">${money(balance(a))}</span>${ICONS.chev}</button>`).join(''):`<div class="empty">Noch keine Konten.<button class="pill solid" data-act="newacc">Konto hinzufügen</button></div>`}</div>
@@ -529,7 +614,7 @@ function vOverview(){
     </section>
     <section class="section"><div class="label"><h3>Schulden & Kredite</h3><button class="link" data-go="schulden">Alle</button></div>
       <div class="group">
-        <div class="row"><div class="main"><span class="t">Restschuld gesamt</span><span class="s">${owes.length} offen · Raten ${money(rates)} / Monat</span></div><span class="v neg">${money(T.owe)}</span></div>
+        <div class="row"><div class="main"><span class="t">Restschuld gesamt</span><span class="s">${owes.length} offen · bis Monatsende fällig ${money(dueM)}</span></div><span class="v neg">${money(T.owe)}</span></div>
         <div class="row"><div class="main"><span class="t">Dir wird geschuldet</span><span class="s">${owed.length} ${owed.length===1?'Person':'Personen'}</span></div><span class="v pos">${money(T.owed)}</span></div>
       </div>
     </section>
@@ -613,42 +698,47 @@ function vBudget(){
 }
 
 function vDebts(){
-  const dir=ui.debtDir,list=state.debts.filter(d=>d.dir===dir);
-  const open=list.filter(d=>rest(d)>0),done=list.filter(d=>rest(d)<=0);
-  const total=open.reduce((s,d)=>s+rest(d),0),rates=open.reduce((s,d)=>s+(+d.monthly||0),0);
-  const projs=open.map(projection).filter(p=>p&&p.n);const maxN=projs.length?Math.max(...projs.map(p=>p.n)):0;
-  const interest=projs.reduce((s,p)=>s+p.interest,0);
-  const overdue=open.filter(d=>d.due&&daysUntil(d.due)<0).length;
-  return `${header('Schulden & Kredite',dir==='owe'?'Was du anderen schuldest':'Was andere dir schulden',`<button class="iconbtn primary" data-act="newdebt" aria-label="Eintrag hinzufügen">${ICONS.plus}</button>`)}
+  const dir=ui.debtDir,owe=dir==='owe',all=state.debts.filter(d=>d.dir===dir);
+  const open=all.filter(d=>rest(d)>0),done=all.filter(d=>rest(d)<=0);
+  const total=open.reduce((s,d)=>s+rest(d),0),paidAll=all.reduce((s,d)=>s+paidSum(d),0);
+  const mk=today().slice(0,7),dueNow=[];
+  open.forEach(d=>d.rates.forEach(x=>{if(!x.paid&&x.date.slice(0,7)<=mk)dueNow.push({d,x})}));
+  dueNow.sort((a,b)=>a.x.date.localeCompare(b.x.date));
+  const dueSum=dueNow.reduce((s,o)=>s+o.x.amount,0),overdue=dueNow.filter(o=>o.x.date<today()).length;
+  const ends=open.map(planEnd),missing=ends.filter(e=>!e).length,lastEnd=ends.filter(Boolean).sort().pop();
+  const f=ui.debtFilter;
+  const list=(f==='open'?open:f==='done'?done:all).slice().sort((a,b)=>(rest(b)>0)-(rest(a)>0)||debtTitle(a).localeCompare(debtTitle(b),'de'));
+  const tl=payTimeline(all);
+  const cols=owe?['Inkasso','Firma','Aktenzeichen']:['Person','Worum es geht','Aktenzeichen'];
+  return `${header('Schulden & Kredite',owe?'Was du anderen schuldest':'Was andere dir schulden',`<button class="iconbtn primary" data-act="newdebt" aria-label="Eintrag hinzufügen">${ICONS.plus}</button>`)}
   ${demoBanner()}
-  <div class="toolbar"><div class="seg" role="group" aria-label="Richtung"><button data-act="ddir" data-v="owe" aria-pressed="${dir==='owe'}">Ich schulde</button><button data-act="ddir" data-v="owed" aria-pressed="${dir==='owed'}">Mir schuldet</button></div></div>
+  <div class="toolbar"><div class="seg" role="group" aria-label="Richtung"><button data-act="ddir" data-v="owe" aria-pressed="${owe}">Ich schulde</button><button data-act="ddir" data-v="owed" aria-pressed="${!owe}">Mir schuldet</button></div></div>
   <div class="grid">
-    <div class="card"><span class="k">${dir==='owe'?'Restschuld gesamt':'Offene Forderungen'}</span><span class="big ${dir==='owe'?'neg':'pos'}">${money(total)}</span><span class="k">${open.length} offen${done.length?` · ${done.length} beglichen`:''}</span></div>
-    ${dir==='owe'?`<div class="card"><span class="k">Monatliche Raten</span><span class="big">${money(rates)}</span><span class="k">${interest>0?'noch ca. '+money(interest)+' Zinsen':'keine Zinsen mehr zu erwarten'}</span></div>
-    <div class="card"><span class="k">Schuldenfrei voraussichtlich</span><span class="big">${total<=0?'Jetzt':maxN?addMonths(maxN):'–'}</span><span class="k">${maxN?`in ${maxN} Monaten bei gleichen Raten`:'Trag monatliche Raten ein'}</span></div>`
-    :`<div class="card"><span class="k">Überfällig</span><span class="big ${overdue?'neg':''}">${overdue}</span><span class="k">${overdue?'Zeit für eine freundliche Erinnerung':'Alles im Rahmen'}</span></div>
-    <div class="card"><span class="k">Schon zurückbekommen</span><span class="big">${money(list.reduce((s,d)=>s+paidTotal(d),0))}</span><span class="k">über alle Einträge</span></div>`}
+    <div class="card"><span class="k">Noch offen gesamt</span><span class="big ${owe?'neg':'pos'}">${money(total)}</span><span class="k">${open.length} offen · ${done.length} erledigt</span></div>
+    <div class="card"><span class="k">Fällig bis Monatsende</span><span class="big ${overdue?'neg':''}">${money(dueSum)}</span><span class="k">${dueNow.length} ${dueNow.length===1?'Rate':'Raten'}${overdue?` · davon ${overdue} überfällig`:''}</span></div>
+    <div class="card"><span class="k">${owe?'Schuldenfrei geplant':'Alles zurück geplant'}</span><span class="big">${!open.length?'Erledigt':lastEnd?MONTHS_S[+lastEnd.slice(5,7)-1]+' '+lastEnd.slice(0,4):'–'}</span><span class="k">${missing?`${missing} ohne vollständigen Ratenplan`:open.length?'laut Ratenplänen':'nichts mehr offen'}</span></div>
+    <div class="card"><span class="k">${owe?'Bisher abbezahlt':'Bisher zurückbekommen'}</span><span class="big">${money(paidAll)}</span><span class="k">über alle Einträge</span></div>
   </div>
-  ${open.length?`<div class="dgrid">${open.map(debtCard).join('')}</div>`:`<div class="group"><div class="empty">${dir==='owe'?'Keine offenen Schulden. Trag Kredite, Ratenkäufe, Dispo oder private Schulden ein.':'Niemand schuldet dir gerade etwas. Trag ein, wem du Geld geliehen oder etwas ausgelegt hast.'}<button class="pill solid" data-act="newdebt">Eintrag hinzufügen</button></div></div>`}
-  ${done.length?`<section class="section"><div class="caps">Beglichen</div><div class="group">${done.map(d=>`<button class="row" data-act="debt" data-id="${d.id}"><div class="main"><span class="t">${esc(d.name)}</span><span class="s">${esc(d.person)} · ${money(paidTotal(d))} gezahlt</span></div><span class="chip green">Beglichen</span>${ICONS.chev}</button>`).join('')}</div></section>`:''}`;
+
+  ${dueNow.length?`<section class="section"><div class="label"><h3>Fällig bis Monatsende</h3></div><div class="group">${dueNow.map(({d,x})=>`<div class="row">${checkBtn(d,x)}<button class="main" style="border:0;background:none;text-align:left;padding:0" data-act="debt" data-id="${d.id}"><span class="t">${esc(debtTitle(d))}</span><span class="s">${d.inkasso?esc(d.inkasso)+' · ':''}${x.date<today()?'<span class="neg">überfällig seit '+fmtDate(x.date)+'</span>':'fällig '+fmtDate(x.date)}</span></button><span class="v">${money(x.amount)}</span></div>`).join('')}</div><p class="foot">Hak eine Rate ab, sobald sie bezahlt ist.${''} Ist beim Eintrag ein Konto hinterlegt, wird sie dort automatisch gebucht.</p></section>`:''}
+
+  <section class="section"><div class="label"><h3>Gesamtübersicht</h3>
+    <div class="seg" role="group" aria-label="Filter">${[['all','Alle'],['open','Offen'],['done','Erledigt']].map(([v,l])=>`<button data-act="dfilt" data-v="${v}" aria-pressed="${f===v}">${l}</button>`).join('')}</div></div>
+    ${list.length?`<div class="tablewrap only-wide"><table class="dt"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}<th class="r">Gesamt</th><th class="r">Noch offen</th><th>Geplant fertig</th><th>Status</th></tr></thead><tbody>
+      ${list.map(d=>{const e=planEnd(d);return `<tr data-act="debt" data-id="${d.id}" tabindex="0">${owe?`<td class="wrap ${d.inkasso?'':'muted'}">${esc(d.inkasso||'keins')}</td><td class="wrap"><b>${esc(d.firma||'–')}</b></td>`:`<td><b>${esc(d.firma||'–')}</b></td><td class="muted wrap">${esc(d.note||'–')}</td>`}<td class="muted">${esc(d.az||'–')}</td><td class="r">${money(d.total)}</td><td class="r ${rest(d)>0&&owe?'':''}"><b>${money(rest(d))}</b></td><td>${rest(d)<=0?'–':e?fmtDate(e):'<span class="muted">offen</span>'}</td><td>${debtStatus(d)}</td></tr>`}).join('')}
+    </tbody></table></div>
+    <div class="group only-narrow">${list.map(d=>`<button class="row" data-act="debt" data-id="${d.id}"><div class="main"><span class="t">${esc(debtTitle(d))}</span><span class="s">${[owe?(d.inkasso||'kein Inkasso'):(d.note||''),d.az].filter(Boolean).map(esc).join(' · ')}</span><span style="margin-top:4px">${debtStatus(d)}</span></div><span class="v"><b>${money(rest(d))}</b><small>von ${money(d.total)}</small></span>${ICONS.chev}</button>`).join('')}</div>`
+    :`<div class="group"><div class="empty">${f==='done'?'Noch nichts erledigt.':owe?'Keine Einträge. Trag Inkasso-Forderungen, Kredite, Ratenkäufe oder private Schulden ein.':'Niemand schuldet dir gerade etwas.'}<button class="pill solid" data-act="newdebt">Eintrag hinzufügen</button></div></div>`}
+  </section>
+
+  ${tl.length?`<section class="section"><div class="label"><h3>Gesamtzahlungsübersicht</h3></div>
+    <div class="tablewrap tall" id="tlwrap"><table class="dt"><thead><tr><th>Monat</th><th class="r">Geplant</th><th class="r">Gezahlt</th><th class="r">Noch offen</th></tr></thead><tbody>
+    ${tl.map(r=>`<tr class="${r.cur?'cur':''}"><td>${MONTHS_S[r.m-1]} ${r.y}${r.cur?' <span class="chip blue">jetzt</span>':''}</td><td class="r muted">${r.planned?money(r.planned):'–'}</td><td class="r ${r.past&&r.paid<r.planned?'neg':r.paid?'pos':''}">${r.paid?money(r.paid):r.past||r.cur?money(0):'–'}</td><td class="r"><b>${money(r.rem)}</b></td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="foot">Vergangene Monate zeigen, was tatsächlich bezahlt wurde. Ab dem aktuellen Monat ist „Noch offen“ die Planung laut Ratenplänen. Rot heißt: In diesem Monat wurde weniger gezahlt als geplant.</p></section>`:''}`;
 }
-function debtCard(d){
-  const r=rest(d),orig=Math.max(d.original||0,d.opening||0),pct=orig?1-r/orig:0,p=projection(d);
-  let facts='';
-  if(d.dir==='owe'){
-    facts=`<div>Rate<b>${d.monthly?money(d.monthly)+' / Monat':'–'}</b></div><div>Zinssatz<b>${(+d.rate||0).toLocaleString('de-DE')} % p. a.</b></div>
-    <div>Restlaufzeit<b>${!p?'Rate fehlt':p.never?'Rate zu niedrig':p.done?'–':p.n+' '+(p.n===1?'Monat':'Monate')}</b></div><div>Fertig ca.<b>${p&&p.end?p.end:'–'}</b></div>`;
-  }else{
-    facts=`<div>Ursprünglich<b>${money(orig)}</b></div><div>Zurückgezahlt<b>${money(paidTotal(d))}</b></div><div>Fällig<b>${d.due?fmtDate(d.due):'Kein Datum'}</b></div><div>Letzte Zahlung<b>${d.payments.length?fmtDate([...d.payments].sort((a,b)=>b.date.localeCompare(a.date))[0].date):'–'}</b></div>`;
-  }
-  return `<article class="dcard">
-    <div class="top"><div style="min-width:0"><div class="name">${esc(d.name)}</div><div class="who">${d.dir==='owe'?'bei ':'von '}${esc(d.person||'–')}</div></div>${debtStatus(d)}</div>
-    <div><div class="amt ${d.dir==='owe'?'':'pos'}">${money(r)}</div><div class="muted" style="font-size:13px">${d.dir==='owe'?'Restschuld':'noch offen'}${orig?` von ${money(orig)}`:''}</div></div>
-    ${orig?`<div class="bar ${d.dir==='owe'?'blue':''}"><span style="width:${Math.max(0,Math.min(100,pct*100))}%"></span></div>`:''}
-    <div class="facts">${facts}</div>
-    <div class="btns"><button class="pill solid" data-act="pay" data-id="${d.id}">${d.dir==='owe'?'Zahlung erfassen':'Rückzahlung erfassen'}</button><button class="pill" data-act="debt" data-id="${d.id}">Details</button></div>
-  </article>`;
-}
+const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+const checkBtn=(d,x)=>`<button type="button" class="check" data-act="ratepaid" data-id="${d.id}" data-r="${x.id}" aria-pressed="${!!x.paid}" aria-label="Rate vom ${fmtDate(x.date)} ${x.paid?'als offen markieren':'als bezahlt markieren'}">${CHECK}</button>`;
 
 function vSettings(){
   return `${header('Einstellungen','')}
@@ -677,18 +767,20 @@ function vSettings(){
 
 /* ===================== Sheets ===================== */
 let sheet=null;
-function openSheet({title,body,save,del,saveLabel='Sichern'}){
-  sheet={save,del};
-  document.getElementById('sheetRoot').innerHTML=`<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+function openSheet({title,body,save,del,saveLabel='Sichern',back,keep}){
+  const old=document.querySelector('#sheetRoot .sheet'),top=keep&&old?old.scrollTop:0;
+  sheet={save,del,back};
+  document.getElementById('sheetRoot').innerHTML=`<div class="scrim${keep?' noanim':''}" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
     <div class="bar-top"><button class="cancel" data-act="close">Abbrechen</button><h4>${esc(title)}</h4>${save?`<button class="ok" data-act="save">${saveLabel}</button>`:'<span></span>'}</div>
     <form class="body" id="sheetform" autocomplete="off">${body}${del?`<button type="button" class="danger" data-act="del">${esc(del.label||'Löschen')}</button>`:''}<div id="sheeterr"></div></form></div></div>`;
   const f=document.querySelector('#sheetform input:not([type=hidden]):not([type=date]),#sheetform select');
-  if(f&&!('ontouchstart' in window))setTimeout(()=>f.focus(),60);
+  if(keep){document.querySelector('#sheetRoot .sheet').scrollTop=top}
+  else if(f&&!('ontouchstart' in window))setTimeout(()=>{if(!document.activeElement||document.activeElement===document.body)f.focus()},60);
   document.getElementById('sheetform').addEventListener('submit',e=>{e.preventDefault();doSave()});
 }
 function closeSheet(){sheet=null;document.getElementById('sheetRoot').innerHTML=''}
 function sheetErr(m){document.getElementById('sheeterr').innerHTML=`<p class="err">${esc(m)}</p>`}
-function doSave(){if(!sheet||!sheet.save)return;const r=sheet.save();if(r===false)return;closeSheet()}
+function doSave(){if(!sheet||!sheet.save)return;const b=sheet.back;const r=sheet.save();if(r===false)return;closeSheet();b&&b()}
 const val=id=>{const e=document.getElementById(id);return e?e.value:''};
 const field=(label,input)=>`<div class="field"><label>${label}</label>${input}</div>`;
 const sel=(id,opts,cur)=>`<select id="${id}">${opts.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===String(cur)?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
@@ -708,15 +800,15 @@ function txSheet(t){
       ${field(t.type==='transfer'?'Von Konto':'Konto',sel('f_acc',accOpts(),t.accountId))}
       ${t.type==='transfer'?field('Auf Konto',sel('f_to',accOpts(),t.toAccountId||(state.accounts[1]||{}).id)):field('Kategorie',sel('f_cat',catsFor(t.type),t.category||catsFor(t.type)[0]?.[0]))}
     </div>
-    ${t.debtId?'<p class="hint">Diese Buchung gehört zu einer Zahlung unter „Schulden & Kredite“.</p>':''}`;
+    ${t.debtId?'<p class="hint">Diese Buchung gehört zu einer abgehakten Rate unter „Schulden & Kredite“. Löschst du sie, wird die Rate wieder offen.</p>':''}`;
   const draw=()=>{const form=document.getElementById('sheetform');const keep={amount:val('f_amount'),note:val('f_note'),date:val('f_date')};form.innerHTML=body()+(isNew?'':`<button type="button" class="danger" data-act="del">Buchung löschen</button>`)+'<div id="sheeterr"></div>';document.getElementById('f_amount').value=keep.amount;document.getElementById('f_note').value=keep.note;document.getElementById('f_date').value=keep.date||today()};
   openSheet({title:isNew?'Neue Buchung':'Buchung',body:body(),
-    del:isNew?null:{label:'Buchung löschen',run:()=>{state.tx=state.tx.filter(x=>x.id!==t.id);if(t.debtId){const d=state.debts.find(x=>x.id===t.debtId);if(d)d.payments=d.payments.filter(p=>p.txId!==t.id)}commit('Buchung gelöscht')}},
+    del:isNew?null:{label:'Buchung löschen',run:()=>{state.tx=state.tx.filter(x=>x.id!==t.id);if(t.debtId){const d=state.debts.find(x=>x.id===t.debtId);const r=d&&d.rates.find(x=>x.txId===t.id);if(r){r.paid=false;delete r.txId}}commit('Buchung gelöscht')}},
     save:()=>{
       const amount=parseNum(val('f_amount'));if(!(amount>0)){sheetErr('Bitte einen Betrag größer als 0 eingeben.');return false}
       const o={id:t.id||newId(),type:t.type,amount:Math.round(amount*100)/100,date:val('f_date')||today(),accountId:val('f_acc'),note:val('f_note').trim()};
       if(t.type==='transfer'){o.toAccountId=val('f_to');o.category='';if(o.toAccountId===o.accountId){sheetErr('Von- und Auf-Konto müssen verschieden sein.');return false}}else o.category=val('f_cat');
-      if(t.debtId){o.debtId=t.debtId;const d=state.debts.find(x=>x.id===t.debtId);const p=d&&d.payments.find(p=>p.txId===t.id);if(p){p.amount=o.amount;p.date=o.date}}
+      if(t.debtId){o.debtId=t.debtId;const d=state.debts.find(x=>x.id===t.debtId);const r=d&&d.rates.find(x=>x.txId===t.id);if(r){r.amount=o.amount}if(t.rateId)o.rateId=t.rateId}
       if(isNew)state.tx.push(o);else state.tx=state.tx.map(x=>x.id===t.id?o:x);
       ui.y=+o.date.slice(0,4);ui.m=+o.date.slice(5,7)-1;
       commit(isNew?'Buchung gespeichert':'Änderung gespeichert');
@@ -793,81 +885,130 @@ function fixedSheet(f){
 }
 
 function debtSheet(d){
-  const isNew=!d;d=d||{dir:ui.debtDir,kind:ui.debtDir==='owed'?'privat':'kredit',name:'',person:'',original:'',opening:0,rate:0,monthly:'',due:'',note:'',payments:[]};
+  const isNew=!d;d=d||{dir:ui.debtDir,kind:ui.debtDir==='owed'?'privat':'inkasso',inkasso:'',firma:'',az:'',total:'',accountId:'',status:'auto',note:'',rates:[]};
   const owe=d.dir==='owe';
-  openSheet({title:isNew?(owe?'Neue Schuld':'Neuer Schuldner'):'Bearbeiten',body:`
+  openSheet({title:isNew?(owe?'Neue Schuld':'Neuer Schuldner'):'Bearbeiten',back:isNew?null:()=>debtDetail(state.debts.find(x=>x.id===d.id)),body:`
     <div class="form">
       ${field('Richtung',sel('f_dir',[['owe','Ich schulde'],['owed','Mir schuldet']],d.dir))}
       ${field('Art',sel('f_kind',Object.entries(DEBT_KINDS),d.kind))}
-      ${field('Bezeichnung',`<input id="f_name" placeholder="${owe?'z. B. Autokredit':'z. B. Geld geliehen'}" value="${esc(d.name)}">`)}
-      ${field(owe?'Gläubiger':'Person',`<input id="f_person" placeholder="${owe?'Bank oder Person':'Name'}" value="${esc(d.person)}">`)}
+      ${field('Inkasso',`<input id="f_inkasso" placeholder="keins" value="${esc(d.inkasso)}">`)}
+      ${field('Firma / Person',`<input id="f_firma" placeholder="z. B. Telefonanbieter" value="${esc(d.firma)}">`)}
+      ${field('Aktenzeichen',`<input id="f_az" placeholder="optional" value="${esc(d.az)}" autocapitalize="off" spellcheck="false">`)}
+      ${field('Gesamtbetrag',`<input id="f_total" inputmode="decimal" placeholder="0,00 €" value="${numIn(d.total)}">`)}
     </div>
+    ${isNew?`<div class="section"><div class="caps">Ratenplan</div><div class="form">
+      ${field('Schon bezahlt',`<input id="f_paid" inputmode="decimal" placeholder="0,00 €">`)}
+      ${field('Rate',`<input id="f_rate" inputmode="decimal" placeholder="z. B. 20,00 €">`)}
+      ${field('Erster Zahltag',`<input id="f_first" type="date" value="${monthDate(1,1)}">`)}
+      ${field('Rhythmus',sel('f_step',STEPS,1))}
+    </div></div>
+    <p class="hint">Der Planer legt die Raten bis zum Gesamtbetrag an, die letzte Rate ist der Rest. Ohne Rate wird ein einziger Zahltag über den ganzen Betrag angelegt. Einzelne Raten kannst du später ändern.</p>`:''}
     <div class="form">
-      ${field('Ursprünglich',`<input id="f_orig" inputmode="decimal" placeholder="optional" value="${numIn(d.original)}">`)}
-      ${field('Noch offen',`<input id="f_rest" inputmode="decimal" placeholder="0,00 €" value="${isNew?'':numIn(rest(d))}">`)}
-      ${field('Zinssatz % p. a.',`<input id="f_rate" inputmode="decimal" placeholder="0" value="${d.rate?numIn(d.rate):''}">`)}
-      ${field('Monatliche Rate',`<input id="f_monthly" inputmode="decimal" placeholder="optional" value="${numIn(d.monthly)}">`)}
-      ${field('Fällig am',`<input id="f_due" type="date" value="${d.due||''}">`)}
+      ${field('Status',sel('f_status',Object.entries(DEBT_STATUS),d.status||'auto'))}
+      ${field('Raten buchen von',sel('f_acc',accOpts('Nicht automatisch buchen'),d.accountId))}
+      <div class="field col"><label for="f_note">Notiz</label><textarea id="f_note" placeholder="z. B. Ansprechpartner, Vereinbarung, Kundennummer">${esc(d.note)}</textarea></div>
     </div>
-    <p class="hint">Mit Zinssatz und Rate berechnet der Planer Restlaufzeit, Enddatum und verbleibende Zinsen. „Fällig am“ ist für private Schulden gedacht.</p>
-    <div class="form"><div class="field col"><label for="f_note">Notiz</label><textarea id="f_note" placeholder="z. B. Vertragsnummer, Absprachen">${esc(d.note)}</textarea></div></div>`,
-    del:isNew?null:{label:'Eintrag löschen',run:()=>{state.debts=state.debts.filter(x=>x.id!==d.id);commit('Eintrag gelöscht')}},
+    <p class="hint">Mit Konto wird jede abgehakte Rate automatisch als Buchung eingetragen und der Kontostand passt sich an.</p>`,
+    del:isNew?null:{label:'Eintrag löschen',run:()=>{removeDebt(d.id)}},
     save:()=>{
-      const name=val('f_name').trim(),r=parseNum(val('f_rest'));
-      if(!name){sheetErr('Bitte eine Bezeichnung eingeben.');return false}
-      if(isNaN(r)||r<0){sheetErr('Bitte eintragen, wie viel noch offen ist.');return false}
-      const orig=parseNum(val('f_orig')),rate=parseNum(val('f_rate')),mon=parseNum(val('f_monthly'));
-      const o={...d,id:d.id||newId(),dir:val('f_dir'),kind:val('f_kind'),name,person:val('f_person').trim(),original:orig>0?orig:r,rate:rate>0?rate:0,monthly:mon>0?mon:0,due:val('f_due'),note:val('f_note').trim()};
-      o.opening=Math.round((r+paidPrincipal(d))*100)/100;
+      const firma=val('f_firma').trim(),inkasso=val('f_inkasso').trim(),total=parseNum(val('f_total'));
+      if(!firma&&!inkasso){sheetErr('Bitte Firma oder Person eintragen.');return false}
+      if(!(total>0)){sheetErr('Bitte den Gesamtbetrag eintragen.');return false}
+      const o={...d,id:d.id||newId(),dir:val('f_dir'),kind:val('f_kind'),inkasso:inkasso.toLowerCase()==='keins'?'':inkasso,firma,az:val('f_az').trim(),total:r2(total),status:val('f_status'),accountId:val('f_acc'),note:val('f_note').trim(),rates:d.rates||[]};
+      if(isNew){
+        const paid=parseNum(val('f_paid'));
+        if(paid>0)o.rates.push({id:newId(),date:today(),amount:r2(Math.min(paid,total)),paid:true,label:'Bisher gezahlt'});
+        const first=val('f_first');if(first)o.rates.push(...planRates(total-(paid>0?Math.min(paid,total):0),parseNum(val('f_rate')),first,+val('f_step')).map(x=>({id:newId(),...x,paid:false})));
+      }
       ui.debtDir=o.dir;
       if(isNew)state.debts.push(o);else state.debts=state.debts.map(x=>x.id===d.id?o:x);
-      commit('Gespeichert');
+      commit(isNew?'Eintrag angelegt':'Gespeichert');
+      if(isNew)setTimeout(()=>debtDetail(o),0);
     }});
 }
+function removeDebt(id){const d=state.debts.find(x=>x.id===id);if(d)d.rates.forEach(x=>{if(x.txId)state.tx=state.tx.filter(t=>t.id!==x.txId)});state.debts=state.debts.filter(x=>x.id!==id);commit('Eintrag gelöscht')}
 
-function paySheet(d){
-  const r=rest(d),mr=(+d.rate||0)/1200;
-  const amt=d.monthly?Math.min(d.monthly,r+r*mr):r;
-  const owe=d.dir==='owe';
-  openSheet({title:owe?'Zahlung erfassen':'Rückzahlung erfassen',saveLabel:'Erfassen',body:`
-    <div class="form"><div class="amount"><input id="f_amount" inputmode="decimal" value="${numIn(Math.round(amt*100)/100)}" aria-label="Betrag"><span>€</span></div></div>
-    <p class="hint" style="margin-top:-10px;text-align:center">${esc(d.name)} · noch offen ${money(r)}</p>
-    <div class="form">
-      ${field('Datum',`<input id="f_date" type="date" value="${today()}">`)}
-      ${mr>0?field('davon Zinsen',`<input id="f_int" inputmode="decimal" value="${numIn(Math.round(r*mr*100)/100)}">`):''}
-      ${field(owe?'Bezahlt von':'Eingang auf',sel('f_acc',accOpts('Nicht als Buchung erfassen'),(state.accounts[0]||{}).id||''))}
-      ${field('Notiz',`<input id="f_note" placeholder="optional" value="">`)}
+function debtDetail(d,keep){
+  if(!d)return closeSheet();
+  const r=rest(d),pct=d.total?Math.min(1,paidSum(d)/d.total):0,gap=planGap(d),e=planEnd(d),a=acc(d.accountId);
+  let cum=0;
+  const rows=sortedRates(d).map(x=>{cum=r2(cum+x.amount);const after=Math.max(0,r2(d.total-cum));const late=!x.paid&&x.date<today();
+    return `<tr class="${x.paid?'done':''}"><td><button type="button" class="datebtn ${late?'neg':''}" data-act="editrate" data-id="${d.id}" data-r="${x.id}">${fmtDate(x.date)}${x.label?`<span class="muted" style="display:block;font-size:12px">${esc(x.label)}</span>`:''}</button></td><td class="r">${money(x.amount)}</td><td class="r muted">${money(after)}</td><td class="c">${checkBtn(d,x)}</td><td class="c"><button type="button" class="more" data-act="editrate" data-id="${d.id}" data-r="${x.id}" aria-label="Rate bearbeiten">•••</button></td></tr>`}).join('');
+  openSheet({title:debtTitle(d),keep,body:`
+    <div class="form debthead">
+      <div class="row"><div class="main"><span class="s">Inkasso</span><span class="t">${esc(d.inkasso||'keins')}</span></div></div>
+      <div class="row"><div class="main"><span class="s">${d.dir==='owe'?'Firma':'Person'}</span><span class="t">${esc(d.firma||'–')}</span></div><span class="chip gray">${esc(DEBT_KINDS[d.kind]||'')}</span></div>
+      ${d.az?`<div class="row"><div class="main"><span class="s">Aktenzeichen</span><span class="t num">${esc(d.az)}</span></div><button type="button" class="pill" data-act="copy" data-v="${esc(d.az)}">Kopieren</button></div>`:''}
+      <div class="row"><div class="main"><span class="s">Gesamtbetrag</span><span class="t num">${money(d.total)}</span></div>${debtStatus(d)}</div>
     </div>
-    ${mr>0?'<p class="hint">Der Zinsanteil ist geschätzt (Restschuld × Zinssatz ÷ 12). Den genauen Wert findest du auf deinem Kontoauszug.</p>':''}
-    <p class="hint">Mit Konto wird die Zahlung auch unter Buchungen eingetragen und der Kontostand passt sich an.</p>`,
-    save:()=>{
-      const a=parseNum(val('f_amount'));if(!(a>0)){sheetErr('Bitte einen Betrag größer als 0 eingeben.');return false}
-      let i=mr>0?parseNum(val('f_int')):0;if(!(i>=0))i=0;if(i>a)i=a;
-      const p={id:newId(),date:val('f_date')||today(),amount:Math.round(a*100)/100,interest:Math.round(i*100)/100,note:val('f_note').trim()};
-      const ac=val('f_acc');
-      if(ac){const t={id:newId(),date:p.date,type:owe?'out':'in',amount:p.amount,accountId:ac,category:owe?(cat('schulden')?'schulden':(state.categories.find(c=>c.kind==='out')||{}).id||''):(cat('einnahme')?'einnahme':(state.categories.find(c=>c.kind==='in')||{}).id||''),note:(owe?'Rate ':'Rückzahlung ')+d.name,debtId:d.id};state.tx.push(t);p.txId=t.id}
-      d.payments.push(p);
-      commit(rest(d)<=0?'Vollständig beglichen 🎉':'Zahlung erfasst');
-    }});
-}
-
-function debtDetail(d){
-  const r=rest(d),p=projection(d),pays=[...d.payments].sort((a,b)=>b.date.localeCompare(a.date));
-  const interestPaid=d.payments.reduce((s,x)=>s+(x.interest||0),0);
-  openSheet({title:d.name,body:`
-    <div class="form"><div class="row"><div class="main"><span class="t">${d.dir==='owe'?'Restschuld':'Noch offen'}</span><span class="s">${d.dir==='owe'?'bei':'von'} ${esc(d.person||'–')}</span></div><span class="v" style="font-size:22px;font-weight:700">${money(r)}</span></div>
-      <div class="row"><div class="main"><span class="t">Status</span></div>${debtStatus(d)||'<span class="chip gray">Offen</span>'}</div>
-      ${d.original?`<div class="row"><div class="main"><span class="t">Ursprünglich</span></div><span class="v">${money(d.original)}</span></div>`:''}
-      <div class="row"><div class="main"><span class="t">Bisher gezahlt</span>${interestPaid?`<span class="s">davon Zinsen ${money(interestPaid)}</span>`:''}</div><span class="v">${money(paidTotal(d))}</span></div>
-      ${d.monthly?`<div class="row"><div class="main"><span class="t">Rate</span><span class="s">${(+d.rate||0).toLocaleString('de-DE')} % Zinsen p. a.</span></div><span class="v">${money(d.monthly)}</span></div>`:''}
-      ${p&&p.n?`<div class="row"><div class="main"><span class="t">Schuldenfrei ca.</span><span class="s">${p.n} Raten${p.interest?' · noch ca. '+money(p.interest)+' Zinsen':''}</span></div><span class="v">${p.end}</span></div>`:''}
-      ${p&&p.never?`<div class="row"><div class="main"><span class="t neg">Die Rate deckt nicht einmal die Zinsen.</span><span class="s">Erhöhe die Rate, sonst wächst die Schuld.</span></div></div>`:''}
-      ${d.due?`<div class="row"><div class="main"><span class="t">Fällig am</span></div><span class="v">${fmtDate(d.due)}</span></div>`:''}
+    <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+      <div class="card" style="padding:12px 14px"><span class="k">Noch offen</span><span class="num" style="font-size:19px;font-weight:700">${money(r)}</span></div>
+      <div class="card" style="padding:12px 14px"><span class="k">Gezahlt</span><span class="num" style="font-size:19px;font-weight:700">${money(paidSum(d))}</span></div>
+      <div class="card" style="padding:12px 14px"><span class="k">Fertig</span><span class="num" style="font-size:19px;font-weight:700">${r<=0?'Erledigt':e?MONTHS_S[+e.slice(5,7)-1]+' '+e.slice(2,4):'–'}</span></div>
+    </div>
+    <div class="bar"><span style="width:${pct*100}%"></span></div>
+    ${gap>0&&r>0?`<div class="banner"><span>Der Ratenplan deckt <b>${money(gap)}</b> noch nicht ab.</span><button type="button" class="pill solid" data-act="plan" data-id="${d.id}">Einplanen</button></div>`:''}
+    <div class="section"><div class="label" style="padding:0 4px"><h3 style="font-size:20px">Ratenplan</h3><span style="display:flex;gap:6px"><button type="button" class="pill" data-act="addrate" data-id="${d.id}">+ Rate</button><button type="button" class="pill" data-act="plan" data-id="${d.id}">Plan erstellen</button></span></div>
+      ${rows?`<div class="tablewrap"><table class="dt rp"><thead><tr><th>Zahltag</th><th class="r">Rate</th><th class="r">Offen</th><th class="c">Gezahlt</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><p class="foot" style="padding:0 4px">Tippe auf einen Zahltag, um Datum oder Betrag zu ändern oder die Rate zu löschen.</p>`:'<div class="form"><div class="empty">Noch keine Raten. Erstelle einen Plan oder füge einzelne Raten hinzu.</div></div>'}
+    </div>
+    <div class="form">
+      <div class="row"><div class="main"><span class="t">Raten buchen von</span></div><span class="v muted" style="font-size:15px">${a?esc(a.name):'Nicht automatisch'}</span></div>
       ${d.note?`<div class="row"><div class="main"><span class="s" style="white-space:normal">${esc(d.note)}</span></div></div>`:''}
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${r>0?`<button type="button" class="pill solid" data-act="pay" data-id="${d.id}">${d.dir==='owe'?'Zahlung erfassen':'Rückzahlung erfassen'}</button>`:''}<button type="button" class="pill" data-act="editdebt" data-id="${d.id}">Bearbeiten</button></div>
-    <div class="section"><div class="caps">Zahlungen</div><div class="form">${pays.length?pays.map(x=>`<div class="row"><div class="main"><span class="t">${money(x.amount)}</span><span class="s">${fmtDate(x.date)}${x.interest?' · Zinsen '+money(x.interest):''}${x.note?' · '+esc(x.note):''}${x.txId?' · gebucht':''}</span></div><button type="button" class="pill danger" data-act="delpay" data-id="${d.id}" data-p="${x.id}">Entfernen</button></div>`).join(''):'<div class="empty">Noch keine Zahlungen erfasst.</div>'}</div></div>`,
-    del:{label:'Eintrag löschen',run:()=>{state.debts=state.debts.filter(x=>x.id!==d.id);commit('Eintrag gelöscht')}}});
+    <button type="button" class="pill solid" style="justify-content:center;padding:12px" data-act="editdebt" data-id="${d.id}">Eintrag bearbeiten</button>`,
+    del:{label:'Eintrag löschen',run:()=>removeDebt(d.id)}});
+  sheet.debtId=d.id;
+}
+
+function rateSheet(d,x){
+  const isNew=!x;x=x||{date:(()=>{const l=sortedRates(d).pop();if(!l)return today();const [y,m,dd]=l.date.split('-').map(Number);return (m===12?y+1:y)+'-'+pad(m===12?1:m+1)+'-'+pad(Math.min(dd,daysIn(m===12?y+1:y,m===12?1:m+1)))})(),amount:'',paid:false};
+  openSheet({title:isNew?'Neue Rate':'Rate bearbeiten',back:()=>debtDetail(state.debts.find(z=>z.id===d.id)),body:`
+    <div class="form"><div class="amount"><input id="f_amount" inputmode="decimal" placeholder="0,00" value="${numIn(x.amount)}" aria-label="Betrag"><span>€</span></div></div>
+    <div class="form">
+      ${field('Zahltag',`<input id="f_date" type="date" value="${x.date}">`)}
+      ${field('Gezahlt',sel('f_paid',[['0','Noch offen'],['1','Bezahlt']],x.paid?'1':'0'))}
+      ${field('Notiz',`<input id="f_label" placeholder="optional, z. B. Sonderzahlung" value="${esc(x.label||'')}">`)}
+    </div>`,
+    del:isNew?null:{label:'Rate löschen',run:()=>{setPaid(d,x,false);d.rates=d.rates.filter(z=>z!==x);commit('Rate gelöscht')}},
+    save:()=>{
+      const a=parseNum(val('f_amount'));if(!(a>0)){sheetErr('Bitte einen Betrag größer als 0 eingeben.');return false}
+      const paid=val('f_paid')==='1';
+      if(isNew){x={id:newId(),date:val('f_date')||today(),amount:r2(a),paid:false};d.rates.push(x)}
+      else{x.date=val('f_date')||x.date;x.amount=r2(a);const t=x.txId&&state.tx.find(t=>t.id===x.txId);if(t){t.amount=x.amount;t.date=x.date>today()?today():x.date}}
+      const l=val('f_label').trim();if(l)x.label=l;else delete x.label;
+      if(paid!==!!x.paid)setPaid(d,x,paid);
+      commit(isNew?'Rate hinzugefügt':'Rate gespeichert');
+    }});
+}
+
+function planSheet(d){
+  const hasOpen=d.rates.some(x=>!x.paid);
+  const last=sortedRates(d).pop();
+  const nm=monthDate(1,1);
+  openSheet({title:'Ratenplan erstellen',saveLabel:'Erstellen',back:()=>debtDetail(state.debts.find(z=>z.id===d.id)),body:`
+    <div class="form">
+      ${field('Offene Raten',sel('p_mode',[['replace','Ersetzen'],['add','Behalten, Rest dazu']],hasOpen&&planGap(d)<=0?'replace':'add'))}
+      ${field('Rate',`<input id="p_rate" inputmode="decimal" placeholder="z. B. 20,00 €" value="${numIn(d.rates.find(x=>!x.paid)?.amount||'')}">`)}
+      ${field('Erster Zahltag',`<input id="p_first" type="date" value="${last&&last.date>=today()&&!(hasOpen&&planGap(d)<=0)?(()=>{const [y,m,dd]=last.date.split('-').map(Number);return (m===12?y+1:y)+'-'+pad(m===12?1:m+1)+'-'+pad(dd)})():nm}">`)}
+      ${field('Rhythmus',sel('p_step',STEPS,1))}
+    </div>
+    <p class="hint" id="p_preview"></p>`,
+    save:()=>{
+      const mode=val('p_mode'),rate=parseNum(val('p_rate')),first=val('p_first'),step=+val('p_step');
+      if(!first){sheetErr('Bitte den ersten Zahltag wählen.');return false}
+      const amount=mode==='replace'?rest(d):planGap(d);
+      if(!(amount>0)){sheetErr('Es ist nichts mehr zu verplanen.');return false}
+      if(mode==='replace')d.rates=d.rates.filter(x=>x.paid);
+      const n=planRates(amount,rate,first,step).map(x=>({id:newId(),...x,paid:false}));
+      d.rates.push(...n);
+      commit(n.length+(n.length===1?' Rate':' Raten')+' angelegt');
+    }});
+  sheet.debtId=d.id;sheet.preview=()=>{
+    const mode=val('p_mode'),amount=mode==='replace'?rest(d):planGap(d),p=planRates(amount,parseNum(val('p_rate')),val('p_first'),+val('p_step'));
+    const el=document.getElementById('p_preview');if(!el)return;
+    el.textContent=!(amount>0)?'Es ist nichts mehr zu verplanen.':!p.length?'':`${money(amount)} werden verplant: ${p.length} ${p.length===1?'Zahlung':'Raten'}, letzte am ${fmtDate(p[p.length-1].date)} über ${money(p[p.length-1].amount)}.`;
+  };
+  sheet.preview();
 }
 
 /* ===================== Aktionen ===================== */
@@ -884,14 +1025,14 @@ document.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
   const el=e.target.closest('[data-act]');if(!el)return;
   const a=el.dataset.act,id=el.dataset.id;
-  if(a==='scrim'){if(e.target===el)closeSheet();return}
+  if(a==='scrim'){if(e.target===el){const b=sheet&&sheet.back;closeSheet();b&&b()}return}
   e.preventDefault&&el.tagName==='BUTTON'&&e.preventDefault();
   switch(a){
-    case 'close':closeSheet();break;
+    case 'close':{const b=sheet&&sheet.back;closeSheet();b&&b();break}
     case 'save':doSave();break;
     case 'del':
       if(armed!==el){armed=el;el.classList.add('armed');el.textContent='Wirklich löschen? Nochmal tippen';setTimeout(()=>{if(armed===el){armed=null;el.classList.remove('armed');el.textContent=sheet&&sheet.del?sheet.del.label:'Löschen'}},3500);break}
-      armed=null;const run=sheet&&sheet.del&&sheet.del.run;closeSheet();run&&run();break;
+      armed=null;const run=sheet&&sheet.del&&sheet.del.run,bk=sheet&&sheet.back;closeSheet();run&&run();bk&&bk();break;
     case 'swatch':document.querySelectorAll('.swatches button').forEach(b=>b.setAttribute('aria-pressed',b===el));document.getElementById('f_color').value=el.dataset.v;break;
     case 'txtype':sheet&&sheet.setType&&sheet.setType(el.dataset.v);break;
     case 'mprev':ui.m--;if(ui.m<0){ui.m=11;ui.y--}render();break;
@@ -910,8 +1051,12 @@ document.addEventListener('click',e=>{
     case 'newdebt':debtSheet();break;
     case 'editdebt':debtSheet(state.debts.find(x=>x.id===id));break;
     case 'debt':debtDetail(state.debts.find(x=>x.id===id));break;
-    case 'pay':paySheet(state.debts.find(x=>x.id===id));break;
-    case 'delpay':{const d=state.debts.find(x=>x.id===id);const p=d.payments.find(x=>x.id===el.dataset.p);d.payments=d.payments.filter(x=>x!==p);if(p&&p.txId)state.tx=state.tx.filter(t=>t.id!==p.txId);commit('Zahlung entfernt');debtDetail(d);break}
+    case 'dfilt':ui.debtFilter=el.dataset.v;render();break;
+    case 'ratepaid':{const d=state.debts.find(x=>x.id===id),x=d&&d.rates.find(z=>z.id===el.dataset.r);if(!x)break;setPaid(d,x,!x.paid);commit(x.paid?(rest(d)<=0?'Komplett erledigt 🎉':'Als bezahlt abgehakt'):'Wieder als offen markiert');if(sheet&&sheet.debtId===d.id&&!sheet.save)debtDetail(d,true);break}
+    case 'addrate':rateSheet(state.debts.find(x=>x.id===id));break;
+    case 'editrate':{const d=state.debts.find(x=>x.id===id);rateSheet(d,d.rates.find(z=>z.id===el.dataset.r));break}
+    case 'plan':planSheet(state.debts.find(x=>x.id===id));break;
+    case 'copy':{const v=el.dataset.v;try{navigator.clipboard.writeText(v).then(()=>toast('Aktenzeichen kopiert'),()=>toast(v))}catch(_){toast(v)}break}
     case 'cleardemo':state=emptyState();commit('Bereit für deine eigenen Daten');go('konten');break;
     case 'loaddemo':
       if(armed!==el){armed=el;el.querySelector('.t').textContent='Sicher? Deine Daten werden ersetzt. Nochmal tippen';break}
@@ -935,13 +1080,15 @@ document.addEventListener('click',e=>{
   }
 });
 document.addEventListener('input',e=>{
+  if(sheet&&sheet.preview&&/^p_/.test(e.target.id))sheet.preview();
   if(e.target.id==='txq'){ui.txQuery=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('txq');n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}
 });
 document.addEventListener('change',e=>{
+  if(sheet&&sheet.preview&&/^p_/.test(e.target.id))sheet.preview();
   if(e.target.id==='txacc'){ui.txAcc=e.target.value;render()}
   if(e.target.id==='importfile'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const s=JSON.parse(r.result);if(!s||!Array.isArray(s.accounts))throw 0;state=normalize(s);state.demo=false;commit('Backup wiederhergestellt');go('uebersicht')}catch(_){toast('Diese Datei ist kein gültiges Backup.')}};r.readAsText(f)}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet){const b=sheet.back;closeSheet();b&&b()}if(e.key==='Enter'&&e.target.matches&&e.target.matches('tr[data-act]'))e.target.click()});
 
 /* ===================== Start ===================== */
 (function start(){
