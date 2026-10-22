@@ -162,7 +162,9 @@ button.brow:hover{background:var(--fill)}
 table.dt{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
 .dt th{position:sticky;top:0;background:var(--card);z-index:1;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--fg2);font-weight:600;text-align:left;padding:10px 14px;border-bottom:.5px solid var(--sep);white-space:nowrap}
 .dt td{padding:10px 14px;border-bottom:.5px solid var(--sep);white-space:nowrap;vertical-align:middle}
-.dt td.wrap{white-space:normal;min-width:110px}
+.dt td.cellwrap{white-space:normal;min-width:100px}
+.dt td.az{overflow-wrap:anywhere;min-width:90px}
+@media (max-width:1279px){.dt th,.dt td{padding-left:10px;padding-right:10px}.dt th{white-space:normal}.dt .chip{white-space:normal;text-align:center}}
 .dt td b{font-weight:600}
 .dt tbody tr:last-child td{border-bottom:0}
 .dt tbody tr[data-act]{cursor:pointer}
@@ -182,7 +184,8 @@ table.dt{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric
 .debthead .s{font-size:12px;text-transform:uppercase;letter-spacing:.04em}
 .scrim.noanim,.scrim.noanim .sheet{animation:none}
 .only-narrow{display:none}
-@media (max-width:699px){.only-wide{display:none}.only-narrow{display:block}.dt{font-size:14px}.dt th,.dt td{padding-left:8px;padding-right:8px}.rp th:last-child,.rp td:last-child{display:none}}
+@media (max-width:1059px){.only-wide{display:none}.only-narrow{display:block}}
+@media (max-width:699px){.dt{font-size:14px}.dt th,.dt td{padding-left:8px;padding-right:8px}.rp th:last-child,.rp td:last-child{display:none}}
 .chip.blue{background:color-mix(in srgb,var(--blue) 14%,transparent);color:var(--blue)}
 
 /* Debt cards */
@@ -724,8 +727,8 @@ function vDebts(){
 
   <section class="section"><div class="label"><h3>Gesamtübersicht</h3>
     <div class="seg" role="group" aria-label="Filter">${[['all','Alle'],['open','Offen'],['done','Erledigt']].map(([v,l])=>`<button data-act="dfilt" data-v="${v}" aria-pressed="${f===v}">${l}</button>`).join('')}</div></div>
-    ${list.length?`<div class="tablewrap only-wide"><table class="dt"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}<th class="r">Gesamt</th><th class="r">Noch offen</th><th>Geplant fertig</th><th>Status</th></tr></thead><tbody>
-      ${list.map(d=>{const e=planEnd(d);return `<tr data-act="debt" data-id="${d.id}" tabindex="0">${owe?`<td class="wrap ${d.inkasso?'':'muted'}">${esc(d.inkasso||'keins')}</td><td class="wrap"><b>${esc(d.firma||'–')}</b></td>`:`<td><b>${esc(d.firma||'–')}</b></td><td class="muted wrap">${esc(d.note||'–')}</td>`}<td class="muted">${esc(d.az||'–')}</td><td class="r">${money(d.total)}</td><td class="r ${rest(d)>0&&owe?'':''}"><b>${money(rest(d))}</b></td><td>${rest(d)<=0?'–':e?fmtDate(e):'<span class="muted">offen</span>'}</td><td>${debtStatus(d)}</td></tr>`}).join('')}
+    ${list.length?`<div class="tablewrap only-wide"><table class="dt"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}<th class="r">Noch offen</th><th>Geplant fertig</th><th>Status</th></tr></thead><tbody>
+      ${list.map(d=>{const e=planEnd(d);return `<tr data-act="debt" data-id="${d.id}" tabindex="0">${owe?`<td class="cellwrap ${d.inkasso?'':'muted'}">${esc(d.inkasso||'keins')}</td><td class="cellwrap"><b>${esc(d.firma||'–')}</b></td>`:`<td><b>${esc(d.firma||'–')}</b></td><td class="muted cellwrap">${esc(d.note||'–')}</td>`}<td class="muted cellwrap az">${esc(d.az||'–')}</td><td class="r"><b>${money(rest(d))}</b><div class="muted" style="font-size:12px">von ${money(d.total)}</div></td><td>${rest(d)<=0?'–':e?fmtDate(e):'<span class="muted">offen</span>'}</td><td>${debtStatus(d)}</td></tr>`}).join('')}
     </tbody></table></div>
     <div class="group only-narrow">${list.map(d=>`<button class="row" data-act="debt" data-id="${d.id}"><div class="main"><span class="t">${esc(debtTitle(d))}</span><span class="s">${[owe?(d.inkasso||'kein Inkasso'):(d.note||''),d.az].filter(Boolean).map(esc).join(' · ')}</span><span style="margin-top:4px">${debtStatus(d)}</span></div><span class="v"><b>${money(rest(d))}</b><small>von ${money(d.total)}</small></span>${ICONS.chev}</button>`).join('')}</div>`
     :`<div class="group"><div class="empty">${f==='done'?'Noch nichts erledigt.':owe?'Keine Einträge. Trag Inkasso-Forderungen, Kredite, Ratenkäufe oder private Schulden ein.':'Niemand schuldet dir gerade etwas.'}<button class="pill solid" data-act="newdebt">Eintrag hinzufügen</button></div></div>`}
