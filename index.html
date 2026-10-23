@@ -486,15 +486,15 @@ async function checkAccessFile(){
 }
 function unlockSheet(){
   openSheet({title:'Mit deinen Daten verbinden',saveLabel:'Entsperren',body:`
-    <div class="form" style="padding:18px 16px;display:flex;flex-direction:column;gap:6px;text-align:center"><span style="font-size:40px">🔐</span><b style="font-size:17px">Neues Gerät</b><span class="muted" style="font-size:15px">Gib einmal deinen Passwort-Satz ein. Danach merkt sich dieser Browser die Verbindung zu GitHub.</span></div>
-    <div class="form">${field('Passwort-Satz',`<input id="u_pass" type="password" autocomplete="current-password" placeholder="eingeben">`)}</div>
+    <div class="form" style="padding:18px 16px;display:flex;flex-direction:column;gap:6px;text-align:center"><span style="font-size:40px">🔐</span><b style="font-size:17px">Neues Gerät</b><span class="muted" style="font-size:15px">Gib einmal deinen Code ein. Danach merkt sich dieses Gerät die Verbindung.</span></div>
+    <div class="form">${field('Code',`<input id="u_pass" type="password" autocomplete="current-password" placeholder="Code">`)}</div>
     <p class="hint">„Abbrechen“ öffnet den Planer ohne Verbindung. Du kannst später unter Einstellungen entsperren.</p>`,
     save:()=>{
-      const pass=val('u_pass');if(!pass){sheetErr('Bitte den Passwort-Satz eingeben.');return false}
+      const pass=val('u_pass');if(!pass){sheetErr('Bitte den Code eingeben.');return false}
       const btn=document.querySelector('.sheet .ok');if(btn)btn.textContent='Prüfe …';
       decryptAccess(accessFile,pass).then(cfg=>{
         gh=cfg;saveGh(cfg);closeSheet();store.sha=null;render();pull(true);toast('Verbunden. Dieses Gerät bleibt angemeldet.');
-      }).catch(()=>{if(btn)btn.textContent='Entsperren';sheetErr('Der Passwort-Satz stimmt nicht.')});
+      }).catch(()=>{if(btn)btn.textContent='Entsperren';sheetErr('Der Code stimmt nicht.')});
       return false;
     }});
   sheet.back=()=>{try{sessionStorage.setItem('finanzen-skip-unlock','1')}catch(e){}};
@@ -819,13 +819,19 @@ function vSettings(){
     <p class="foot">Der Token wird nur in diesem Browser gespeichert. Die data.json gehört in ein privates Repository.</p>
   </section>
   ${gh?`<section class="section"><div class="caps">Andere Geräte ohne Token verbinden</div>
-    <form class="form" autocomplete="off">
-      ${field('Passwort-Satz',`<input id="a_pass" type="password" autocomplete="new-password" placeholder="mind. 10 Zeichen">`)}
+    <form hidden>
+    </form>
+    <div class="group">
+      <button class="row" data-act="copylink"><div class="main"><span class="t" style="color:var(--blue)">Verbindungslink kopieren</span><span class="s">Ohne Eingabe: Link an dich selbst schicken und auf dem Handy öffnen</span></div></button>
+    </div>
+    <p class="foot">Der Link enthält deinen Token. Schick ihn nur an dich selbst (z. B. per AirDrop oder Notiz) und lösch die Nachricht danach.</p>
+    <form class="form" autocomplete="off" style="margin-top:8px">
+      ${field('Code',`<input id="a_pass" type="password" inputmode="text" autocomplete="new-password" placeholder="mind. 4 Zeichen">`)}
       ${field('Wiederholen',`<input id="a_pass2" type="password" autocomplete="new-password" placeholder="nochmal">`)}
     </form>
     <div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 4px"><button class="pill solid" data-act="mkaccess">Zugangsdatei erstellen</button></div>
-    <p class="foot">Erstellt die Datei <b>zugang.json</b> mit deinem Token, verschlüsselt mit diesem Passwort-Satz. Lade sie ins selbe Repository wie die index.html. Auf jedem neuen Gerät gibst du dann nur einmal den Passwort-Satz ein, nie mehr den Token. Nimm einen Satz, den du dir leicht merkst, aber den niemand errät, z. B. „Kater Rudi frisst 3 Tomaten“.</p>
-  </section>`:(accessFile?`<section class="section"><div class="group"><button class="row" data-act="unlock"><div class="main"><span class="t" style="color:var(--blue)">Mit Passwort-Satz entsperren</span><span class="s">Zugangsdatei gefunden</span></div></button></div></section>`:'')}
+    <p class="foot">Alternativ: Lade die erstellte <b>zugang.json</b> ins Repository der index.html. Dann fragt jedes neue Gerät einmal nach dem Code, z. B. 4 Ziffern. Ein längerer Code ist sicherer, weil die Datei öffentlich liegt.</p>
+  </section>`:(accessFile?`<section class="section"><div class="group"><button class="row" data-act="unlock"><div class="main"><span class="t" style="color:var(--blue)">Mit Code entsperren</span><span class="s">Zugangsdatei gefunden</span></div></button></div></section>`:'')}
   <section class="section"><div class="caps">Backup</div><div class="group">
     <button class="row" data-act="export"><div class="main"><span class="t" style="color:var(--blue)">Backup herunterladen (JSON)</span><span class="s">Alle Konten, Buchungen, Budgets und Schulden</span></div></button>
     <button class="row" data-act="csv"><div class="main"><span class="t" style="color:var(--blue)">Buchungen als CSV exportieren</span><span class="s">Für Excel oder Numbers</span></div></button>
@@ -1142,10 +1148,15 @@ document.addEventListener('click',e=>{
     case 'ghoff':
       if(armed!==el){armed=el;el.textContent='Wirklich trennen? Nochmal tippen';break}
       armed=null;gh=null;saveGh(null);store.sha=null;setSync('local');render();toast('Verbindung getrennt. Deine Daten bleiben in diesem Browser.');break;
+    case 'copylink':{
+      const link=location.origin+location.pathname+'#verbinden='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(gh)))));
+      const done=()=>toast('Link kopiert. Auf dem Handy einfach öffnen.');
+      try{navigator.clipboard.writeText(link).then(done,()=>{window.prompt?window.prompt('Link kopieren:',link):toast('Kopieren nicht möglich')})}catch(_){toast('Kopieren nicht möglich')}
+      break}
     case 'unlock':if(accessFile)unlockSheet();break;
     case 'mkaccess':{
       const p1=val('a_pass'),p2=val('a_pass2');
-      if(p1.length<10){toast('Der Passwort-Satz braucht mindestens 10 Zeichen.');break}
+      if(p1.length<4){toast('Der Code braucht mindestens 4 Zeichen.');break}
       if(p1!==p2){toast('Die beiden Eingaben stimmen nicht überein.');break}
       if(!window.crypto||!crypto.subtle){toast('Verschlüsselung geht nur über https, also auf deiner GitHub-Seite.');break}
       encryptAccess(gh,p1).then(f=>{download(ACCESS_FILE,JSON.stringify(f,null,1),'application/json');toast('zugang.json erstellt. Jetzt ins Repo der index.html hochladen.')}).catch(()=>toast('Die Datei konnte nicht erstellt werden.'));
@@ -1177,6 +1188,11 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet){const b=shee
   const h=(location.hash||'').slice(1);if(VIEWS.some(v=>v.id===h))ui.view=h;
   state=normalize(loadLocal()||makeDemo());
   render();
+  if(location.hash.startsWith('#verbinden=')){
+    try{const c=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(11))))));if(c&&c.owner&&c.repo&&c.token){gh=c;saveGh(c);setTimeout(()=>toast('Verbunden. Dieses Gerät bleibt angemeldet.'),600)}}catch(e){}
+    try{history.replaceState(null,'',location.pathname+'#uebersicht')}catch(e){}
+    ui.view='uebersicht';render();
+  }
   pull();
   checkAccessFile();
   document.addEventListener('visibilitychange',()=>{if(document.hidden){if(store.timer)flush()}else pull()});
