@@ -459,6 +459,47 @@ async function flush(){
   store.saving=false;
   if(store.again){store.again=false;flush()}
 }
+/* ---------- Zugangsdatei (verschlüsselter Token für alle Geräte) ---------- */
+const ACCESS_FILE='zugang.json',ITER=310000;
+const b64=u=>{let s='';const a=new Uint8Array(u);for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s)};
+const unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+async function deriveKey(pass,salt,iter){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptAccess(cfg,pass){
+  const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await deriveKey(pass,salt,ITER);
+  const data=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(cfg)));
+  return {app:'finanzen-im-blick',v:1,iter:ITER,salt:b64(salt),iv:b64(iv),data:b64(data)};
+}
+async function decryptAccess(f,pass){
+  const key=await deriveKey(pass,unb64(f.salt),f.iter||ITER);
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(f.iv)},key,unb64(f.data));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+let accessFile=null;
+async function checkAccessFile(){
+  if(gh||!window.crypto||!crypto.subtle)return;
+  try{if(sessionStorage.getItem('finanzen-skip-unlock'))return}catch(e){}
+  try{const r=await fetch(ACCESS_FILE+'?_='+Date.now(),{cache:'no-store'});if(!r.ok)return;const f=await r.json();if(f&&f.app==='finanzen-im-blick'&&f.data){accessFile=f;unlockSheet()}}catch(e){}
+}
+function unlockSheet(){
+  openSheet({title:'Mit deinen Daten verbinden',saveLabel:'Entsperren',body:`
+    <div class="form" style="padding:18px 16px;display:flex;flex-direction:column;gap:6px;text-align:center"><span style="font-size:40px">🔐</span><b style="font-size:17px">Neues Gerät</b><span class="muted" style="font-size:15px">Gib einmal deinen Passwort-Satz ein. Danach merkt sich dieser Browser die Verbindung zu GitHub.</span></div>
+    <div class="form">${field('Passwort-Satz',`<input id="u_pass" type="password" autocomplete="current-password" placeholder="eingeben">`)}</div>
+    <p class="hint">„Abbrechen“ öffnet den Planer ohne Verbindung. Du kannst später unter Einstellungen entsperren.</p>`,
+    save:()=>{
+      const pass=val('u_pass');if(!pass){sheetErr('Bitte den Passwort-Satz eingeben.');return false}
+      const btn=document.querySelector('.sheet .ok');if(btn)btn.textContent='Prüfe …';
+      decryptAccess(accessFile,pass).then(cfg=>{
+        gh=cfg;saveGh(cfg);closeSheet();store.sha=null;render();pull(true);toast('Verbunden. Dieses Gerät bleibt angemeldet.');
+      }).catch(()=>{if(btn)btn.textContent='Entsperren';sheetErr('Der Passwort-Satz stimmt nicht.')});
+      return false;
+    }});
+  sheet.back=()=>{try{sessionStorage.setItem('finanzen-skip-unlock','1')}catch(e){}};
+}
+
 async function pull(manual){
   if(!gh){setSync('local');return}
   if(store.saving||store.timer)return;
@@ -775,8 +816,16 @@ function vSettings(){
       ${field('Token',`<input id="gh_token" type="password" placeholder="${gh?'gespeichert, leer lassen':'github_pat_…'}" value="" autocapitalize="off" spellcheck="false">`)}
     </form>
     <div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 4px"><button class="pill solid" data-act="ghconnect">${gh?'Änderungen speichern':'Verbinden'}</button>${gh?`<button class="pill danger" data-act="ghoff">Verbindung trennen</button>`:''}</div>
-    <p class="foot">Der Token wird nur in diesem Browser gespeichert und nie in eine Datei geschrieben. Verbinde jedes Gerät einmal mit demselben Token, dann laden iPhone und Computer dieselbe data.json. Am besten liegt sie in einem privaten Repository.</p>
+    <p class="foot">Der Token wird nur in diesem Browser gespeichert. Die data.json gehört in ein privates Repository.</p>
   </section>
+  ${gh?`<section class="section"><div class="caps">Andere Geräte ohne Token verbinden</div>
+    <form class="form" autocomplete="off">
+      ${field('Passwort-Satz',`<input id="a_pass" type="password" autocomplete="new-password" placeholder="mind. 10 Zeichen">`)}
+      ${field('Wiederholen',`<input id="a_pass2" type="password" autocomplete="new-password" placeholder="nochmal">`)}
+    </form>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 4px"><button class="pill solid" data-act="mkaccess">Zugangsdatei erstellen</button></div>
+    <p class="foot">Erstellt die Datei <b>zugang.json</b> mit deinem Token, verschlüsselt mit diesem Passwort-Satz. Lade sie ins selbe Repository wie die index.html. Auf jedem neuen Gerät gibst du dann nur einmal den Passwort-Satz ein, nie mehr den Token. Nimm einen Satz, den du dir leicht merkst, aber den niemand errät, z. B. „Kater Rudi frisst 3 Tomaten“.</p>
+  </section>`:(accessFile?`<section class="section"><div class="group"><button class="row" data-act="unlock"><div class="main"><span class="t" style="color:var(--blue)">Mit Passwort-Satz entsperren</span><span class="s">Zugangsdatei gefunden</span></div></button></div></section>`:'')}
   <section class="section"><div class="caps">Backup</div><div class="group">
     <button class="row" data-act="export"><div class="main"><span class="t" style="color:var(--blue)">Backup herunterladen (JSON)</span><span class="s">Alle Konten, Buchungen, Budgets und Schulden</span></div></button>
     <button class="row" data-act="csv"><div class="main"><span class="t" style="color:var(--blue)">Buchungen als CSV exportieren</span><span class="s">Für Excel oder Numbers</span></div></button>
@@ -1093,6 +1142,14 @@ document.addEventListener('click',e=>{
     case 'ghoff':
       if(armed!==el){armed=el;el.textContent='Wirklich trennen? Nochmal tippen';break}
       armed=null;gh=null;saveGh(null);store.sha=null;setSync('local');render();toast('Verbindung getrennt. Deine Daten bleiben in diesem Browser.');break;
+    case 'unlock':if(accessFile)unlockSheet();break;
+    case 'mkaccess':{
+      const p1=val('a_pass'),p2=val('a_pass2');
+      if(p1.length<10){toast('Der Passwort-Satz braucht mindestens 10 Zeichen.');break}
+      if(p1!==p2){toast('Die beiden Eingaben stimmen nicht überein.');break}
+      if(!window.crypto||!crypto.subtle){toast('Verschlüsselung geht nur über https, also auf deiner GitHub-Seite.');break}
+      encryptAccess(gh,p1).then(f=>{download(ACCESS_FILE,JSON.stringify(f,null,1),'application/json');toast('zugang.json erstellt. Jetzt ins Repo der index.html hochladen.')}).catch(()=>toast('Die Datei konnte nicht erstellt werden.'));
+      break}
     case 'ghconnect':{
       const c={owner:val('gh_owner').trim(),repo:val('gh_repo').trim(),branch:val('gh_branch').trim()||'main',path:(val('gh_path').trim()||'data.json').replace(/^\/+/,''),token:val('gh_token').trim()||(gh&&gh.token)||''};
       if(!c.owner||!c.repo||!c.token){toast('Bitte Benutzername, Repository und Token ausfüllen.');break}
@@ -1121,6 +1178,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet){const b=shee
   state=normalize(loadLocal()||makeDemo());
   render();
   pull();
+  checkAccessFile();
   document.addEventListener('visibilitychange',()=>{if(document.hidden){if(store.timer)flush()}else pull()});
   window.addEventListener('online',()=>pull());
 })();
